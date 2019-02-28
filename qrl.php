@@ -54,8 +54,9 @@ if (isset($play)) {
 
     $maxThreads = $mc ?? 10;
     $threadPause = $td ?? 0;
+    $fileName = $qf ?? 'querys.dat';
 
-    $sender = new qrltool\sender($db, $maxThreads, $threadPause);
+    $sender = new qrltool\sender($db, $fileName, $maxThreads, $threadPause);
     $sender->run();
 }
 

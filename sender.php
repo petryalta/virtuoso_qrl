@@ -39,7 +39,7 @@ class sender
     /**
      * How much concurent connection use. Default 5
      */
-    private $maxTheads;
+    private $maxThreads;
 
     /**
      * Delay before send next query from thread. Default 0
@@ -53,18 +53,23 @@ class sender
 
     /**
      * Send querys to Virtuoso server
+     * 
+     * @input $dbParam array Params for connect to Virtuoso
+     * @input $fileName string Querys file name
+     * @input $maxThreads integer How much concurent connection use
+     * @input $threadPause integer Delay between querys in thread
      */
-    public function __construct($dbParam, $maxThreads = 5, $threadPause = 0)
+    public function __construct($dbParam, $fileName, $maxThreads = 5, $threadPause = 0)
     {
         $this->useDocker = $dbParam['useDocker'] ?? false;
         $this->dockerContainerName = $dbParam['dockerContainerName'] ?? '';
         $this->dbUser = $dbParam['dbUser'] ?? 'dba';
         $this->dbPass = $dbParam['dbPass'] ?? 'dba';
         $this->pdPort = $dbParam['dbPort'] ?? '1111';
-        $this->maxTheads = $maxThreads;
+        $this->maxThreads = $maxThreads;
         $this->threadPause = $threadPause;
 
-        $this->reader = new qrltool\queryReader();
+        $this->reader = new qrltool\queryReader($fileName);
 
         if ($this->useDocker) {
             echo "Sender use Docker container $this->dockerContainerName \n";
@@ -77,7 +82,7 @@ class sender
  *
  * @input array
  */
-    public function run($params = null): void
+    public function run($params = null)
     {
 
         if (is_null($params)) {
@@ -91,17 +96,13 @@ class sender
         $querys = $this->reader->getQuerys();
 
         $pool = array();
-        for ($i = 0; $i < $this->maxTheads; $i++) {
+        for ($i = 0; $i < $this->maxThreads; $i++) {
             $pool[$i] = false;
         }
 
         foreach ($querys as $n => $query) {
             echo "Run $n query \n";
-            if ($n > 2) {
-                break;
-            }
-            // For TEST
-
+         
             $query = str_replace('"', '\"', $query);
 
             $cmd = "isql-v $this->dbPort $this->dbUser $this->dbPass \"EXEC= $query\" ";

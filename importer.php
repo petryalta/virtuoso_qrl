@@ -51,7 +51,7 @@ class qrlImporter
         $this->dockerContainerName = $dbParam['dockerContainerName'] ?? '';
         $this->dbUser = $dbParam['dbUser'] ?? 'dba';
         $this->dbPass = $dbParam['dbPass'] ?? 'dba';
-        $this->pdPort = $dbParam['dbPort'] ?? '1111';
+        $this->dbPort = $dbParam['dbPort'] ?? '1111';
 
         if ($this->useDocker) {
             echo "Importer use Docker container $this->dockerContainerName \n";
@@ -132,9 +132,9 @@ class qrlImporter
      */
     public function getData($count = 10, $offet = 0)
     {
-        //$totalCount = $this->getCount();
-        $totalCount = 30;
-        echo "Total records: $count \n";
+        echo "Total records: ";
+        $totalCount = $this->getCount();
+        echo "$count \n";
         $i = $offet;
         $res = [];
         while ($i < $totalCount) {
