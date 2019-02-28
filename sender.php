@@ -78,9 +78,10 @@ class sender
     }
 
 /**
- * Main function
+ * Основная процедура отправки данных
  *
- * @input array
+ * @param $params array параметры выполенения процесса
+ * @return none
  */
     public function run($params = null)
     {

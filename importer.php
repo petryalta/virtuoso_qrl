@@ -82,6 +82,8 @@ class qrlImporter
     /**
      * Получить сырые данные
      *
+     * @param $count integer кол-во данных получаемых за один проход
+     * @param $offet integer смещение от начала выборки
      * @return array
      */
     private function getPart($count, $offset = 0)
@@ -105,7 +107,8 @@ class qrlImporter
     /**
      * Преобразовываем входящий массив в массив запросов
      *
-     * @return array
+     * @param $inBuf array "Сырой" массив строк
+     * @return array query - запрос, dt - дата выполнения запроса и его идентификатор
      */
     private function collectQuery($inBuf)
     {
@@ -129,6 +132,9 @@ class qrlImporter
 
     /**
      * Получить запросы
+     * 
+     * @param $count integer кол-во получаемых данных за один проход
+     * @param $offet integer смещение от начала выборки
      */
     public function getData($count = 10, $offet = 0)
     {

@@ -16,8 +16,10 @@ class queryReader
 
     /**
      * Чтение запросов
+     * 
+     * @param $fileName string Файл с запросами
      */
-    public function __construct($fileName = 'out.log')
+    public function __construct($fileName = 'querys.dat')
     {
         $this->fileName = $fileName;
     }
