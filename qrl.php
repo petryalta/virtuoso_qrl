@@ -9,6 +9,10 @@ include_once './param-helper.php';
 require_once './importer.php';
 require_once './sender.php';
 
+function getTime(){
+    return microtime(false);
+}
+
 if (file_exists('./db.conf')) {
     $db = include './db.conf';
 } else {
@@ -22,14 +26,21 @@ if (file_exists('./db.conf')) {
 
 if (isset($help)) {
     $help = "\nVirtuoso QRL tool\nRun: php ";
-    $help .= $argv[0]." [--qrl_log=file.qrl] [--qf=query_file] [--play] [--mc=5] [--td=0] \n";
+    $help .= $argv[0]." [--qrl_log=file.qrl] [--qf=query_file] [--play] [--mc=5] [--td=0] [--time]\n";
     $help .= "--qrl_log \t file name with QRL data \n";
     $help .= "--qf \t text file with querys. Default querys.dat \n";
     $help .= "--play \t send querys to server \n";
     $help .= "--mc \t max concurent connections. Default 5 \n";
     $help .= "--td \t thread delay in seconds. Default 0 sec \n";
+    $help .= "--time \t calculate duration time \n";
     echo $help."\n";
     exit(0);
+}
+
+if (isset($time)) {
+    $startTime = getTime();
+} else {
+    $startTime = 0;
 }
 
 // read from QRL log file
@@ -58,6 +69,11 @@ if (isset($play)) {
 
     $sender = new qrltool\sender($db, $fileName, $maxThreads, $threadPause);
     $sender->run();
+}
+
+if ($startTime > 0) {
+    $duration = getTime() - $start;
+    echo "Duration: $duration msec \n";
 }
 
 ?>
