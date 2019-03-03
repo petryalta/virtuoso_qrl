@@ -65,7 +65,7 @@ class sender
         $this->dockerContainerName = $dbParam['dockerContainerName'] ?? '';
         $this->dbUser = $dbParam['dbUser'] ?? 'dba';
         $this->dbPass = $dbParam['dbPass'] ?? 'dba';
-        $this->pdPort = $dbParam['dbPort'] ?? '1111';
+        $this->dbPort = $dbParam['dbPort'] ?? '1111';
         $this->maxThreads = $maxThreads;
         $this->threadPause = $threadPause;
 
@@ -106,10 +106,14 @@ class sender
          
             $query = str_replace('"', '\"', $query);
 
-            $cmd = "isql-v $this->dbPort $this->dbUser $this->dbPass \"EXEC= $query\" ";
+            $tmpFile = "./q${n}.tmp";
+            file_put_contents($tmpFile, $query.";\n");
+
+            $cmd = "isql-v $this->dbPort $this->dbUser $this->dbPass ";
             if ($this->useDocker) {
-                $cmd = "docker exec -t $this->dockerContainerName " . $cmd;
+                $cmd = "docker exec -i $this->dockerContainerName " . $cmd;
             }
+            $cmd = "cat $tmpFile | ".$cmd;
 
             if ($this->threadPause) {
                 $cmd = "sleep $this->threadPause" . 's && ' . $cmd;
@@ -121,15 +125,16 @@ class sender
 
                 for ($i = 0; $i < $this->maxThreads and $commande_lancee == false; $i++) {
                     if ($pool[$i] === false) {
-                        echo "Run $i thread \n";
+//                        echo "Run $i thread \n";
                         $pool[$i] = proc_open($cmd, $params, $foo);
                         $commande_lancee = true;
                     } else {
                         $etat = proc_get_status($pool[$i]);
                         if ($etat['running'] == false) {
-                            echo "Thread $i stoped \n";
+                            //\unlink("./q");
+//                            echo "Thread $i stoped \n";
                             proc_close($pool[$i]);
-                            echo "Run $i thread \n";
+//                            echo "Run $i thread \n";
                             $pool[$i] = proc_open($cmd, $params, $foo);
                             $commande_lancee = true;
                         }
@@ -137,7 +142,7 @@ class sender
                 }
             }
         }
-
+        system("rm -f *.tmp");
     }
 
 }

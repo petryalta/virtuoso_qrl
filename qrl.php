@@ -9,7 +9,7 @@ include_once './param-helper.php';
 require_once './importer.php';
 require_once './sender.php';
 
-function getTime(){
+function getTimer(){
     list($usec, $sec) = explode(" ", microtime());
     return ((float)$usec + (float)$sec);    
 }
@@ -39,9 +39,9 @@ if (isset($help)) {
 }
 
 if (isset($time)) {
-    $startTime = getTime(false);
+    $start_time = getTimer();
 } else {
-    $startTime = 0;
+    $start_time = false;
 }
 
 // read from QRL log file
@@ -72,9 +72,9 @@ if (isset($play)) {
     $sender->run();
 }
 
-if ($startTime > 0) {
-    $duration = getTime(false) - $start;
-    echo "Duration: $duration msec \n";
+if ($start_time) {
+    $duration = round(getTimer() - $start_time,3);
+    echo "Duration: $duration sec \n";
 }
 
 ?>
