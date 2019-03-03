@@ -10,7 +10,8 @@ require_once './importer.php';
 require_once './sender.php';
 
 function getTime(){
-    return microtime(false);
+    list($usec, $sec) = explode(" ", microtime());
+    return ((float)$usec + (float)$sec);    
 }
 
 if (file_exists('./db.conf')) {
@@ -38,7 +39,7 @@ if (isset($help)) {
 }
 
 if (isset($time)) {
-    $startTime = getTime();
+    $startTime = getTime(false);
 } else {
     $startTime = 0;
 }
@@ -72,7 +73,7 @@ if (isset($play)) {
 }
 
 if ($startTime > 0) {
-    $duration = getTime() - $start;
+    $duration = getTime(false) - $start;
     echo "Duration: $duration msec \n";
 }
 
