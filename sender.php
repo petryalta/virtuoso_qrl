@@ -69,7 +69,7 @@ class sender
         $this->maxThreads = $maxThreads;
         $this->threadPause = $threadPause;
 
-        $this->reader = new qrltool\queryReader($fileName);
+        $this->reader = new queryReader($fileName);
 
         if ($this->useDocker) {
             echo "Sender use Docker container $this->dockerContainerName \n";
