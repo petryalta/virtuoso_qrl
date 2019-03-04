@@ -53,7 +53,7 @@ class sender
 
     /**
      * Send querys to Virtuoso server
-     * 
+     *
      * @input $dbParam array Params for connect to Virtuoso
      * @input $fileName string Querys file name
      * @input $maxThreads integer How much concurent connection use
@@ -81,9 +81,11 @@ class sender
  * Основная процедура отправки данных
  *
  * @param $params array параметры выполенения процесса
+ * @param $queryNum integer порядковый номер запроса
+ * @param $countRepeat integer сколько раз повторить
  * @return none
  */
-    public function run($params = null)
+    public function run($params = null, $queryNum = false, $countRepeat = 1)
     {
 
         if (is_null($params)) {
@@ -102,41 +104,51 @@ class sender
         }
 
         foreach ($querys as $n => $query) {
+
+            if ($queryNum !== false && $queryNum != $n) {
+                continue;
+            }
+
             echo "Run $n query \n";
-         
+
             $query = str_replace('"', '\"', $query);
 
+            $query = str_replace("\n", '', $query);
+
             $tmpFile = "./q${n}.tmp";
-            file_put_contents($tmpFile, $query.";\n");
+            file_put_contents($tmpFile, $query . ";\n");
 
             $cmd = "isql-v $this->dbPort $this->dbUser $this->dbPass ";
             if ($this->useDocker) {
                 $cmd = "docker exec -i $this->dockerContainerName " . $cmd;
             }
-            $cmd = "cat $tmpFile | ".$cmd;
+            $cmd = "cat $tmpFile | " . $cmd;
 
             if ($this->threadPause) {
                 $cmd = "sleep $this->threadPause" . 's && ' . $cmd;
             }
 
-            $commande_lancee = false;
-            while ($commande_lancee == false) {
-                usleep(10000); // pause 10 msec
+            for ($r = 0; $r < $countRepeat; $r++) {
+                echo "Repeat $r \n";
+                $commande_lancee = false;
+                while ($commande_lancee == false) {
+                    usleep(10000); // pause 10 msec
 
-                for ($i = 0; $i < $this->maxThreads and $commande_lancee == false; $i++) {
-                    if ($pool[$i] === false) {
-//                        echo "Run $i thread \n";
-                        $pool[$i] = proc_open($cmd, $params, $foo);
-                        $commande_lancee = true;
-                    } else {
-                        $etat = proc_get_status($pool[$i]);
-                        if ($etat['running'] == false) {
-                            //\unlink("./q");
-//                            echo "Thread $i stoped \n";
-                            proc_close($pool[$i]);
-//                            echo "Run $i thread \n";
+                    for ($i = 0; $i < $this->maxThreads and $commande_lancee == false; $i++) {
+                        if ($pool[$i] === false) {
+                        echo "Run $i thread \n";
                             $pool[$i] = proc_open($cmd, $params, $foo);
                             $commande_lancee = true;
+                        } else {
+                            $etat = proc_get_status($pool[$i]);
+                            if ($etat['running'] == false) {
+                                //\unlink("./q");
+                                //                            echo "Thread $i stoped \n";
+                                proc_close($pool[$i]);
+                            echo "Run $i thread \n";
+                                $pool[$i] = proc_open($cmd, $params, $foo);
+                                $commande_lancee = true;
+                            }
                         }
                     }
                 }

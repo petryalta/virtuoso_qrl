@@ -27,13 +27,15 @@ if (file_exists('./db.conf')) {
 
 if (isset($help)) {
     $help = "\nVirtuoso QRL tool\nRun: php ";
-    $help .= $argv[0]." [--qrl_log=file.qrl] [--qf=query_file] [--play] [--mc=5] [--td=0] [--time]\n";
+    $help .= $argv[0]." [--qrl_log=file.qrl] [--qf=query_file] [--play] [--mc=5] [--td=0] [--time] [--qn=0] [--rc=1]\n";
     $help .= "--qrl_log \t file name with QRL data \n";
     $help .= "--qf \t text file with querys. Default querys.dat \n";
     $help .= "--play \t send querys to server \n";
     $help .= "--mc \t max concurent connections. Default 5 \n";
     $help .= "--td \t thread delay in seconds. Default 0 sec \n";
     $help .= "--time \t calculate duration time \n";
+    $help .= "--qn \t query number \n";
+    $help .= "--rc \t count of repeate query \n";
     echo $help."\n";
     exit(0);
 }
@@ -69,7 +71,9 @@ if (isset($play)) {
     $fileName = $qf ?? 'querys.dat';
 
     $sender = new qrltool\sender($db, $fileName, $maxThreads, $threadPause);
-    $sender->run();
+    $qn = $qn ?? false;
+    $rc = $rc ?? 1;
+    $sender->run(null, $qn, $rc);
 }
 
 if ($start_time) {
