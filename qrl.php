@@ -1,17 +1,19 @@
 <?php
 /**
  * Virtuoso QRL tool
- * 
+ *
  * copyright Petr Ivanov (petr.yrs@gmail.com)
  */
 
 include_once './param-helper.php';
 require_once './importer.php';
 require_once './sender.php';
+require_once './import_odbc.php';
 
-function getTimer(){
+function getTimer()
+{
     list($usec, $sec) = explode(" ", microtime());
-    return ((float)$usec + (float)$sec);    
+    return ((float) $usec + (float) $sec);
 }
 
 if (file_exists('./db.conf')) {
@@ -27,7 +29,7 @@ if (file_exists('./db.conf')) {
 
 if (isset($help)) {
     $help = "\nVirtuoso QRL tool\nRun: php ";
-    $help .= $argv[0]." [--qrl_log=file.qrl] [--qf=query_file] [--play] [--mc=5] [--td=0] [--time] [--qn=0] [--rc=1]\n";
+    $help .= $argv[0] . " [--qrl_log=file.qrl] [--qf=query_file] [--play] [--mc=5] [--td=0] [--time] [--qn=0] [--rc=1] [--odbc] [--csv=file.csv]\n";
     $help .= "--qrl_log \t file name with QRL data \n";
     $help .= "--qf \t text file with querys. Default querys.dat \n";
     $help .= "--play \t send querys to server \n";
@@ -36,7 +38,9 @@ if (isset($help)) {
     $help .= "--time \t calculate duration time \n";
     $help .= "--qn \t query number \n";
     $help .= "--rc \t count of repeate query \n";
-    echo $help."\n";
+    $help .= "--odbc \t use ODBC for connection. Params in odbc.conf \n";
+    $help .= "--csv \t export querys to CSV file \n";
+    echo $help . "\n";
     exit(0);
 }
 
@@ -46,12 +50,24 @@ if (isset($time)) {
     $start_time = false;
 }
 
+if (isset($odbc)) {
+    if (file_exists('./odbc.conf')) {
+        $odbcParams = include './odbc.conf';
+    } else {
+        die("File odbc.conf not found \n");
+    }
+}
+
 // read from QRL log file
 if (isset($qrl_log)) {
-    $outFile =   $qf ?? 'querys.dat';
-    $importer = new qrltool\qrlImporter($qrl_log, $db);
+    $outFile = $qf ?? 'querys.dat';
+    if (isset($odbc)) {
+        $importer = new qrltool\qrlImportODBC($qrl_log, $odbcParams);
+    } else {
+        $importer = new qrltool\qrlImporter($qrl_log, $db);
+    }
     $data = $importer->getData();
-    
+
     $f = fopen($outFile, 'wb');
     foreach ($data as $item) {
         fputs($f, "#StartQuery\n");
@@ -59,6 +75,15 @@ if (isset($qrl_log)) {
         $s = $item['query'];
         fwrite($f, $s);
         fputs($f, "\n#EndQuery\n\n");
+    }
+    fclose($f);
+}
+
+// export to CSV
+if (isset($csv) && isset($data)) {
+    $f = fopen($csv, 'w');
+    foreach ($data as $item) {
+        fputcsv($f, $item);
     }
     fclose($f);
 }
@@ -77,8 +102,6 @@ if (isset($play)) {
 }
 
 if ($start_time) {
-    $duration = round(getTimer() - $start_time,3);
+    $duration = round(getTimer() - $start_time, 3);
     echo "Duration: $duration sec \n";
 }
-
-?>

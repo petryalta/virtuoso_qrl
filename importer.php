@@ -1,11 +1,11 @@
 <?php
-namespace qrltool;
-
 /**
  * Класс для получения данных из QRL-лога
  *
  * copyright by Petr Ivanov (petr.yrs@gmail.com)
  */
+namespace qrltool;
+
 class qrlImporter
 {
     /**
@@ -142,7 +142,7 @@ class qrlImporter
      * @param $count integer кол-во получаемых данных за один проход
      * @param $offet integer смещение от начала выборки
      */
-    public function getData($count = 10, $offet = 0)
+    public function getData($count = 100, $offet = 0)
     {
         echo "Total records: ";
         $totalCount = $this->getCount();
