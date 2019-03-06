@@ -88,7 +88,13 @@ class qrlImporter
      */
     private function getPart($count, $offset = 0)
     {
-        $cmd = "isql-v $this->dbPort $this->dbUser $this->dbPass \"EXEC=set blobs on; select TOP $offset,$count CONCAT('STARTQUERY:',ql_text,':ENDQUERY'), ql_start_dt  from sys_query_log  WHERE qrl_file = '$this->qrlFileName' \"";
+        $cmd = "isql-v $this->dbPort $this->dbUser $this->dbPass ";
+        $sql .=" set blobs on; ";
+        $sql .=" select TOP $offset,$count ";
+        $sql .=" CONCAT('STARTQUERY:',ql_text,':ENDQUERY'), ";
+        $sql .=" ql_start_dt  ";
+        $sql .=" from sys_query_log  WHERE qrl_file = '$this->qrlFileName' ";
+        $cmd .="\"EXEC= $sql \";";
         if ($this->useDocker) {
             $cmd = "docker exec -t $this->dockerContainerName " . $cmd;
         }

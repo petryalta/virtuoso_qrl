@@ -136,7 +136,7 @@ class sender
 
                     for ($i = 0; $i < $this->maxThreads and $commande_lancee == false; $i++) {
                         if ($pool[$i] === false) {
-                        echo "Run $i thread \n";
+                        //echo "Run $i thread \n";
                             $pool[$i] = proc_open($cmd, $params, $foo);
                             $commande_lancee = true;
                         } else {
@@ -145,7 +145,7 @@ class sender
                                 //\unlink("./q");
                                 //                            echo "Thread $i stoped \n";
                                 proc_close($pool[$i]);
-                            echo "Run $i thread \n";
+                            //echo "Run $i thread \n";
                                 $pool[$i] = proc_open($cmd, $params, $foo);
                                 $commande_lancee = true;
                             }
