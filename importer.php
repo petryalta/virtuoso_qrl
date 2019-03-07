@@ -131,7 +131,7 @@ class qrlImporter
         }
         $resQuery = [];
         foreach ($matches as $key => $item) {
-            $resQuery[] = ['query' => $item[1], 'dt' => $matches2[$key][1]];
+            $resQuery[] = ['query' => $item[1], 'ql_start_dt' => $matches2[$key][1]];
         }
         return $resQuery;
     }

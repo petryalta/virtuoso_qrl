@@ -35,10 +35,7 @@ class qrlImportODBC
         $this->db = odbc_connect($params['dsn'], $params['user'], $params['password']);
         if (is_null($this->db)) {
             die(odbc_errormsg);
-        } else {
-            var_dump($this->db);
-        }
-
+        } 
     }
 
     public function __destruct()
@@ -55,19 +52,22 @@ class qrlImportODBC
      */
     public function execSQL($sql, $params = null)
     {
+        //echo "\n SQL: $sql \n";
         if (is_null($params)) {
             $params = [];
         }
-        $prepated = odbc_prepare($this->db, $sql);
-        if (!$prepated) {
-            die("could not prepare statement " . $sql);
-        }
-
-        if (odbc_execute($prepated, $params)) {
-            return odbc_fetch_array($prepated);
-        } else {
-            new Exception(odbc_errormsg, 1);
-        }
+            $res = \odbc_exec($this->db, $sql);
+            if ($res === false) {
+                new Exception(odbc_errormsg, 1);
+            } else {
+//                odbc_binmode($res,ODBC_BINMODE_PASSTHRU);
+                odbc_binmode($res,ODBC_BINMODE_RETURN);
+                $result = [];
+                while ($row = \odbc_fetch_array($res)) {
+                    $result[] = $row;
+                }
+                return $result;
+            }
     }
 
     /**
@@ -80,7 +80,7 @@ class qrlImportODBC
         $sql = "select COUNT(*) from sys_query_log  WHERE qrl_file = '$this->qrlFileName'";
         $res = $this->execSQL($sql);
         if ($res) {
-            return $res[0];
+            return $res[0]['count'];
         } else {
             return 0;
         }
@@ -95,12 +95,13 @@ class qrlImportODBC
      */
     private function getPart($count, $offset = 0)
     {
-        $sql .=" set blobs on; ";
-        $sql .=" select TOP $offset,$count ";
-        $sql .=" CONCAT('STARTQUERY:',ql_text,':ENDQUERY'), ";
-        $sql .=" ql_start_dt  ";
+        $sql =" select TOP $offset,$count ";
+        $sql .=" CONCAT('STARTQUERY:',ql_text,':ENDQUERY'), * ";
+//        $sql .=" ql_start_dt  ";
         $sql .=" from sys_query_log  WHERE qrl_file = '$this->qrlFileName' ";
-        return $this->execSQL($sql);
+        $res = $this->execSQL($sql);
+        //var_dump($res);
+        return $res;
     }
 
 
@@ -114,19 +115,29 @@ class qrlImportODBC
         echo "Total records: ";
         $totalCount = $this->getCount();
         echo "$count \n";
+
         $i = $offet;
         $res = [];
+
+        //$sql ="set blobs on";
+        //$this->execSQL($sql);
+
+
         while ($i < $totalCount) {
             $querys = $this->getPart($count, $i);
             foreach ($querys as $item) {
+/*                $res[] = [
+                    'query'=>$item['computed0'],
+                    'dt'=>$item['ql_start_dt']
+                ]; */
+                $item['query']=$item['computed0'];
+
                 $res[] = $item;
             }
             $i = $i + $count;
             echo "Done $i of $totalCount \n";
         }
+        //var_dump($res);
         return $res;
     }
 }
-
-$test = new qrlImportODBC('virtuoso.qrl');
-var_dump($test->getCount());

@@ -16,6 +16,14 @@ function getTimer()
     return ((float) $usec + (float) $sec);
 }
 
+function stripString($s){
+    $s = str_replace("\r\n", " ", $s);
+    $s = str_replace("\r", " ", $s);
+    $s = str_replace("\n", " ", $s);
+    $s = str_replace("\t", " ", $s);
+    return $s;
+}
+
 if (file_exists('./db.conf')) {
     $db = include './db.conf';
 } else {
@@ -71,7 +79,7 @@ if (isset($qrl_log)) {
     $f = fopen($outFile, 'wb');
     foreach ($data as $item) {
         fputs($f, "#StartQuery\n");
-        fputs($f, "#ql_start_dt=" . $item['dt'] . "\n");
+        fputs($f, "#ql_start_dt=" . $item['ql_start_dt'] . "\n");
         $s = $item['query'];
         fwrite($f, $s);
         fputs($f, "\n#EndQuery\n\n");
@@ -80,9 +88,15 @@ if (isset($qrl_log)) {
 }
 
 // export to CSV
-if (isset($csv) && isset($data)) {
+if (isset($csv) && isset($data) && count($data) > 0) {
     $f = fopen($csv, 'w');
+    fputcsv($f, array_keys($data[0])); // put headers
     foreach ($data as $item) {
+        $item['query'] = stripString($item['query']);
+        $item['ql_text'] = stripString($item['ql_text']);
+        $item['computed0'] = stripString($item['computed0']);
+        $item['ql_messages'] = stripString($item['ql_messages']);
+        $item['ql_plan'] = stripString($item['ql_plan']);
         fputcsv($f, $item);
     }
     fclose($f);
