@@ -148,6 +148,8 @@ if (isset($directly) && isset($qrl_log) && isset($csv)) {
     fclose($f_querys);
     fclose($f_csv);
 
+    $firstRow = true;
+
     if (isset($odbc)) {
         $importer = new qrltool\qrlImportODBC($qrl_log, $odbcParams);
     } else {
@@ -164,13 +166,13 @@ if (isset($directly) && isset($qrl_log) && isset($csv)) {
         $f_querys = fopen($qf, 'ab');
         $f_csv = fopen($csv, 'a');
 
-        if ($i == 0) {
-            fputcsv($f_csv, array_keys($data[0])); // put headers            
-        }
-
         foreach ($data as $item) {
             $item['query']=$item['computed0'];
-            writeQueryRow($f_querys, $item);
+            if ($firstRow) {
+                fputcsv($f_csv, array_keys($item)); // put headers            
+                $firstRow = false;
+            }
+                writeQueryRow($f_querys, $item);
             writeCSVRow($f_csv, $item);
         }
 
