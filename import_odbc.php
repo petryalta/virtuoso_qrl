@@ -40,7 +40,9 @@ class qrlImportODBC
 
     public function __destruct()
     {
-        odbc_close($this->db);
+        if ($this->db) {
+            odbc_close($this->db);
+        }
     }
 
     /**
@@ -52,7 +54,6 @@ class qrlImportODBC
      */
     public function execSQL($sql, $params = null)
     {
-        //echo "\n SQL: $sql \n";
         if (is_null($params)) {
             $params = [];
         }
@@ -93,14 +94,12 @@ class qrlImportODBC
      * @param $offet integer смещение от начала выборки
      * @return array
      */
-    private function getPart($count, $offset = 0)
+    public function getPart($count, $offset = 0)
     {
         $sql =" select TOP $offset,$count ";
         $sql .=" CONCAT('STARTQUERY:',ql_text,':ENDQUERY'), * ";
-//        $sql .=" ql_start_dt  ";
         $sql .=" from sys_query_log  WHERE qrl_file = '$this->qrlFileName' ";
         $res = $this->execSQL($sql);
-        //var_dump($res);
         return $res;
     }
 
@@ -119,25 +118,15 @@ class qrlImportODBC
         $i = $offet;
         $res = [];
 
-        //$sql ="set blobs on";
-        //$this->execSQL($sql);
-
-
         while ($i < $totalCount) {
             $querys = $this->getPart($count, $i);
             foreach ($querys as $item) {
-/*                $res[] = [
-                    'query'=>$item['computed0'],
-                    'dt'=>$item['ql_start_dt']
-                ]; */
                 $item['query']=$item['computed0'];
-
                 $res[] = $item;
             }
             $i = $i + $count;
             echo "Done $i of $totalCount \n";
         }
-        //var_dump($res);
         return $res;
     }
 }
