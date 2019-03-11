@@ -97,7 +97,8 @@ class qrlImportODBC
     public function getPart($count, $offset = 0)
     {
         $sql =" select TOP $offset,$count ";
-        $sql .=" CONCAT('STARTQUERY:',ql_text,':ENDQUERY'), * ";
+        //$sql .=" CONCAT('STARTQUERY:',ql_text,':ENDQUERY'), * ";
+        $sql .= " * ";
         $sql .=" from sys_query_log  WHERE qrl_file = '$this->qrlFileName' ";
         $res = $this->execSQL($sql);
         return $res;
@@ -121,7 +122,7 @@ class qrlImportODBC
         while ($i < $totalCount) {
             $querys = $this->getPart($count, $i);
             foreach ($querys as $item) {
-                $item['query']=$item['computed0'];
+                //$item['query']=$item['computed0'];
                 $res[] = $item;
             }
             $i = $i + $count;

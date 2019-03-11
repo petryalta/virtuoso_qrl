@@ -38,7 +38,7 @@ function writeQueryRow($f, $item)
 {
     fputs($f, "#StartQuery\n");
     fputs($f, "#ql_start_dt=" . $item['ql_start_dt'] . "\n");
-    $s = $item['query'];
+    $s = $item['ql_text'];
     fwrite($f, $s);
     fputs($f, "\n#EndQuery\n\n");
 
@@ -49,9 +49,9 @@ function writeQueryRow($f, $item)
  */
 function writeCSVRow($f, $item)
 {
-    $item['query'] = stripString($item['query']);
+    //$item['query'] = stripString($item['query']);
     $item['ql_text'] = stripString($item['ql_text']);
-    $item['computed0'] = stripString($item['computed0']);
+    //$item['computed0'] = stripString($item['computed0']);
     $item['ql_messages'] = stripString($item['ql_messages']);
     $item['ql_plan'] = stripString($item['ql_plan']);
     fputcsv($f, $item);

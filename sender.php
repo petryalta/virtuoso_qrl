@@ -111,9 +111,9 @@ class sender
 
             echo "Run $n query \n";
 
-            $query = str_replace('"', '\"', $query);
+            //$query = str_replace('"', '\"', $query);
 
-            $query = str_replace("\n", '', $query);
+            //$query = str_replace("\n", '', $query);
 
             $tmpFile = "./q${n}.tmp";
             file_put_contents($tmpFile, $query . ";\n");
