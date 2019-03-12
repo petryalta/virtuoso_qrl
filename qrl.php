@@ -10,6 +10,9 @@ require_once './importer.php';
 require_once './sender.php';
 require_once './import_odbc.php';
 
+require_once 'adapter_odbc.php';
+require_once 'adapter_pdo.php';
+
 /**
  * Получаем временную метку
  */
@@ -37,7 +40,7 @@ function stripString($s)
 function writeQueryRow($f, $item)
 {
     fputs($f, "#StartQuery\n");
-    fputs($f, "#ql_start_dt=" . $item['ql_start_dt'] . "\n");
+    fputs($f, "#ql_start_dt=" . substr($item['ql_start_dt'],0,19) . "\n");
     $s = $item['ql_text'];
     fwrite($f, $s);
     fputs($f, "\n#EndQuery\n\n");
@@ -54,6 +57,7 @@ function writeCSVRow($f, $item)
     //$item['computed0'] = stripString($item['computed0']);
     $item['ql_messages'] = stripString($item['ql_messages']);
     $item['ql_plan'] = stripString($item['ql_plan']);
+    $item['ql_start_dt'] = substr($item['ql_start_dt'],0,19);
     fputcsv($f, $item);
 }
 
@@ -151,7 +155,7 @@ if (isset($directly) && isset($qrl_log) && isset($csv)) {
     $firstRow = true;
 
     if (isset($odbc)) {
-        $importer = new qrltool\qrlImportODBC($qrl_log, $odbcParams);
+        $importer = new qrltool\qrlImportODBC($qrl_log, $odbcParams, 'pdo');
     } else {
         $importer = new qrltool\qrlImporter($qrl_log, $db);
     }
@@ -159,7 +163,7 @@ if (isset($directly) && isset($qrl_log) && isset($csv)) {
 
     $i = $start;
     while ($i < $totalCount) {
-        echo date('H:i:s',time()). " try $i of $totalCount ";
+        echo date('H:i:s', time()) . " try $i of $totalCount ";
         $data = $importer->getPart($countPeer, $i);
         echo " ok ";
 
@@ -167,12 +171,11 @@ if (isset($directly) && isset($qrl_log) && isset($csv)) {
         $f_csv = fopen($csv, 'a');
 
         foreach ($data as $item) {
-            $item['query']=$item['computed0'];
             if ($firstRow) {
-                fputcsv($f_csv, array_keys($item)); // put headers            
+                fputcsv($f_csv, array_keys($item)); // put headers
                 $firstRow = false;
             }
-                writeQueryRow($f_querys, $item);
+            writeQueryRow($f_querys, $item);
             writeCSVRow($f_csv, $item);
         }
 
