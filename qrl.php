@@ -8,10 +8,11 @@
 include_once './param-helper.php';
 require_once './importer.php';
 require_once './sender.php';
-require_once './import_odbc.php';
+//require_once './import_odbc.php';
 
 require_once 'adapter_odbc.php';
 require_once 'adapter_pdo.php';
+require_once 'adapter_file.php';
 
 /**
  * Получаем временную метку
@@ -76,7 +77,7 @@ if (isset($help)) {
     $help = "\nVirtuoso QRL tool\nRun: php ";
     $help .= $argv[0] . "[--time]\n";
     $help .= "\nImport params:\n";
-    $help .= "\t [--qrl_log=file.qrl] [--odbc] [--start=0]\n";
+    $help .= "\t [--qrl_log=file.qrl] [--odbc] [--start=0] [--start_date='YYYY-MM-DD HH:MM:SS']\n";
     $help .= "\nExport params: \n";
     $help .= "\t [--qf=query_file] [--csv=file.csv] [--directly] \n";
     $help .= "\nReplay params: \n";
@@ -91,7 +92,8 @@ if (isset($help)) {
     $help .= "--qn \t\t query number \n";
     $help .= "--rc \t\t count of repeate query \n";
     $help .= "--odbc \t\t use ODBC for connection. Params in odbc.conf \n";
-    $help .= "--start \t\t start position in qrl log \n";
+    $help .= "--start \t start position in qrl log \n";
+    $help .= "--start_date \t start date and time for import\n";
     $help .= "--csv \t\t export querys to CSV file \n";
     $help .= "--directly \t directly write imported data \n";
     echo $help . "\n";
@@ -118,9 +120,9 @@ $start = $start ?? 0;
 if (isset($qrl_log) && !isset($directly)) {
     $outFile = $qf ?? 'querys.dat';
     if (isset($odbc)) {
-        $importer = new qrltool\qrlImportODBC($qrl_log, $odbcParams);
+        $importer = new qrltool\Importer($qrl_log, $odbcParams);
     } else {
-        $importer = new qrltool\qrlImporter($qrl_log, $db);
+        $importer = new qrltool\adapter_file($qrl_log, $db);
     }
     $data = $importer->getData(100, $start);
 
@@ -155,9 +157,9 @@ if (isset($directly) && isset($qrl_log) && isset($csv)) {
     $firstRow = true;
 
     if (isset($odbc)) {
-        $importer = new qrltool\qrlImportODBC($qrl_log, $odbcParams, 'pdo');
+        $importer = new qrltool\Importer($qrl_log, $odbcParams, 'pdo');
     } else {
-        $importer = new qrltool\qrlImporter($qrl_log, $db);
+        $importer = new qrltool\adapter_file($qrl_log, $db);
     }
     $totalCount = $importer->getCount();
 
