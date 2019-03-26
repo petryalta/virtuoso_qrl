@@ -124,7 +124,7 @@ if (isset($qrl_log) && !isset($directly)) {
     } else {
         $importer = new qrltool\adapter_file($qrl_log, $db);
     }
-    $data = $importer->getData(100, $start);
+    $data = $importer->getData(100, $start, $start_date ?? false);
 
     $f = fopen($outFile, 'wb');
     foreach ($data as $item) {
@@ -166,7 +166,7 @@ if (isset($directly) && isset($qrl_log) && isset($csv)) {
     $i = $start;
     while ($i < $totalCount) {
         echo date('H:i:s', time()) . " try $i of $totalCount ";
-        $data = $importer->getPart($countPeer, $i);
+        $data = $importer->getPart($countPeer, $i, $start_date ?? false);
         echo " ok ";
 
         $f_querys = fopen($qf, 'ab');
