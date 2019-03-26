@@ -1,158 +1,93 @@
 <?php
 /**
- * Класс для получения данных из QRL-лога
+ * Получение всех данных через ODBC
  *
- * copyright by Petr Ivanov (petr.yrs@gmail.com)
+ * copyright by Petr Ivanov (c) petr.yrs@gmail.com
  */
 namespace qrltool;
 
-class qrlImporter
+require_once 'adapter_odbc.php';
+require_once 'adapter_pdo.php';
+
+class Importer
 {
-    /**
-     * название файла с QRL логами
-     */
+
+    private $adapter;
     private $qrlFileName;
 
     /**
-     * Virtuoso запущен в Docker-контейнере
+     * Получение данных из QRL-лога
+     *
+     * @param string $fileName название файла QRL-лога
+     * @param array $params параметры подключения
+     * @param string $adapterName название адаптера для подключения. Возможные варианты: odbc, pdo
      */
-    private $useDocker = false;
-
-    /**
-     * Название Docker-контенера с Virtuoso
-     */
-    private $dockerContainerName;
-
-    /**
-     * Имя пользователя для доступа к Virtuoso
-     */
-    private $dbUser;
-
-    /**
-     * Пароль пользователя для доступа к Virtuoso
-     */
-    private $dbPass;
-
-    /**
-     * Порт на котором слушает Virtuoso
-     */
-    private $dbPort;
-
-    /**
-     * @input $fileName название qrl-файла
-     * @input $dbParam array Параметры подключения к Virtuoso
-     */
-
-    public function __construct($fileName = 'virtuoso.qrl', $dbParam)
+    public function __construct($fileName, $params = null, $adapterName = 'odbc')
     {
+        echo "Use $adapterName adapter \n";
+        $adapterName = '\\qrltool\\adapter_'.$adapterName;
+        $this->adapter = new $adapterName($fileName, $params);
         $this->qrlFileName = $fileName;
-
-        $this->useDocker = $dbParam['useDocker'] ?? false;
-        $this->dockerContainerName = $dbParam['dockerContainerName'] ?? '';
-        $this->dbUser = $dbParam['dbUser'] ?? 'dba';
-        $this->dbPass = $dbParam['dbPass'] ?? 'dba';
-        $this->dbPort = $dbParam['dbPort'] ?? '1111';
-
-        if ($this->useDocker) {
-            echo "Importer use Docker container $this->dockerContainerName \n";
-        }
     }
 
     /**
-     * Получить кол-во записей
+     * Получить кол-во записей в QRL-файле
      *
      * @return integer
      */
     public function getCount()
     {
-        $cmd = "isql-v $this->dbPort $this->dbUser $this->dbPass \"EXEC=set blobs on; select COUNT(*) from sys_query_log  WHERE qrl_file = '$this->qrlFileName'\"";
-        if ($this->useDocker) {
-            $cmd = "docker exec -t $this->dockerContainerName " . $cmd;
-        }
-
-        $res = [];
-        exec($cmd, $res, $code);
-        if ($code != 0) {
-            die("cannt connect to Virtuoso\n");
+        $sql = "select COUNT(*) from sys_query_log  WHERE qrl_file = '$this->qrlFileName'";
+        $res = $this->adapter->execSQL($sql);
+        if ($res) {
+            return $res[0]['count'];
         } else {
-            return (int) $res[8];
+            return 0;
         }
     }
 
-    /**
-     * Получить сырые данные
+  /**
+     * Получить часть данных
      *
-     * @param $count integer кол-во данных получаемых за один проход
-     * @param $offet integer смещение от начала выборки
+     * @param integer $count кол-во данных получаемых за один проход
+     * @param integer $offet смещение от начала выборки
+     * @param string $startDate дата и время начала выборки
      * @return array
      */
-    private function getPart($count, $offset = 0)
+    public function getPart($count, $offset = 0, $startDate = false)
     {
-        $cmd = "isql-v $this->dbPort $this->dbUser $this->dbPass ";
-        $sql .=" set blobs on; ";
-        $sql .=" select TOP $offset,$count ";
-        $sql .=" CONCAT('STARTQUERY:',ql_text,':ENDQUERY'), ";
-        $sql .=" ql_start_dt  ";
+        $sql =" select TOP $offset,$count ";
+        //$sql .=" CONCAT('STARTQUERY:',ql_text,':ENDQUERY'), * ";
+        $sql .= " * ";
         $sql .=" from sys_query_log  WHERE qrl_file = '$this->qrlFileName' ";
-        $cmd .="\"EXEC= $sql \";";
-        if ($this->useDocker) {
-            $cmd = "docker exec -t $this->dockerContainerName " . $cmd;
+        if ($startDate) {
+            $sql .=" and ql_start_dt >= CAST('$startDate' as datetime)";
         }
-
-        $res = [];
-        exec($cmd, $res, $code);
-        if ($code != 0) {
-            die("cannt connect to Virtuoso\n");
-        } else {
-            $res = array_slice($res, 7);
-            return $res;
-        }
-
+        $res = $this->adapter->execSQL($sql);
+        return $res;
     }
 
-    /**
-     * Преобразовываем входящий массив в массив запросов
-     *
-     * @param $inBuf array "Сырой" массив строк
-     * @return array query - запрос, dt - дата выполнения запроса и его идентификатор
-     */
-    private function collectQuery($inBuf)
-    {
-        $s = implode("\n", $inBuf);
-
-        $re = '/STARTQUERY:([\s\S]+?):ENDQUERY/m';
-        preg_match_all($re, $s, $matches, PREG_SET_ORDER, 0);
-
-        $re = '/:ENDQUERY[\s\S]+?(\d{4}.\d*.\d*\s\d*:\d*.\d*\s\d*)/m'; //получение ql_start_dt
-        preg_match_all($re, $s, $matches2, PREG_SET_ORDER, 0);
-
-        if (count($matches) != count($matches2)) {
-            echo "WARNING: query count not mach dt counts \n";
-        }
-        $resQuery = [];
-        foreach ($matches as $key => $item) {
-            $resQuery[] = ['ql_text' => $item[1], 'ql_start_dt' => $matches2[$key][1]];
-        }
-        return $resQuery;
-    }
 
     /**
      * Получить запросы
      * 
-     * @param $count integer кол-во получаемых данных за один проход
-     * @param $offet integer смещение от начала выборки
+     * @param integer $count кол-во получаемых данных за один проход
+     * @param integer $offet смещение от начала выборки
+     * @param string $startDate дата и время начала выборки
      */
-    public function getData($count = 100, $offet = 0)
-    {
+    public function getData($count = 100, $offet = 0, $startDate = false){
         echo "Total records: ";
         $totalCount = $this->getCount();
         echo "$count \n";
+
         $i = $offet;
         $res = [];
+
         while ($i < $totalCount) {
-            $durtyData = $this->getPart($count, $i);
-            $querys = $this->collectQuery($durtyData);
+            $querys = $this->getPart($count, $i, $startDate);
             foreach ($querys as $item) {
+                //$item['query']=$item['computed0'];
+                $item['ql_start_dt']=substr($item['ql_start_dt'],0,22);
                 $res[] = $item;
             }
             $i = $i + $count;
@@ -161,4 +96,3 @@ class qrlImporter
         return $res;
     }
 }
-
