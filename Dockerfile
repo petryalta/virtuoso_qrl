@@ -9,3 +9,5 @@ RUN git clone https://github.com/petryalta/virtuoso_qrl.git
 
 ADD ./odbc.ini /etc/odbc.ini
 ADD ./virtodbc.so /virtodbc.so
+
+WORKDIR /virtuoso_qrl

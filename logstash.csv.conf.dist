@@ -1,0 +1,155 @@
+# Logstash configuration example for parsing csv
+input {
+    file {
+	path => "/var/lib/logstash/csv/*.csv"
+	start_position => "beginning"
+	sincedb_path => "/dev/null"
+	file_completed_action => "delete"
+        codec => plain {
+            charset => "UTF-8"
+        }
+
+        add_field => {
+            indexname => "qrl"
+        }
+    }
+}
+
+filter {
+
+    if "qrl" in [indexname] {
+    csv {
+	separator => ","
+
+	columns => [
+	    "ql_id",
+        "ql_start_dt",
+        "ql_rt_msec",
+        "ql_rt_clocks",
+        "ql_client_ip",
+        "ql_user",
+        "ql_sqlstate",
+        "ql_error",
+        "ql_swap",
+        "ql_user_cpu",
+        "ql_sys_cpu",
+        "ql_text",
+        "ql_params",
+        "ql_plan_hash",
+        "ql_c_clocks",
+        "ql_c_msec",
+        "ql_c_disk_reads",
+        "ql_c_disk_wait",
+        "ql_c_cl_wait",
+        "ql_cl_messages",
+        "ql_c_rnd_rows",
+        "ql_rnd_rows",
+        "ql_seq_rows",
+        "ql_same_seg",
+        "ql_same_page",
+        "ql_same_parent",
+        "ql_thread_clocks",
+        "ql_disk_wait_clocks",
+        "ql_cl_wait_clocks",
+        "ql_pg_wait_clocks",
+        "ql_disk_reads",
+        "ql_spec_disk_reads",
+        "ql_messages",
+        "ql_message_bytes",
+        "ql_qp_threads",
+        "ql_memory",
+        "ql_memory_max",
+        "ql_lock_waits",
+        "ql_lock_wait_msec",
+        "ql_plan",
+        "ql_node_stat",
+        "ql_c_memory",
+        "ql_rows_affected"
+    ]
+
+	convert => {
+        "ql_id" => "integer"
+        "ql_start_dt" => "date_time"
+        "ql_rt_msec" => "integer"
+        "ql_rt_clocks" => "integer"
+        "ql_swap" => "integer"
+        "ql_user_cpu" => "integer"
+        "ql_sys_cpu" => "integer"
+        "ql_plan_hash" => "float"
+        "ql_c_clocks" => "integer"
+        "ql_c_msec" => "integer"
+        "ql_c_disk_reads" => "integer"
+        "ql_c_disk_wait" => "integer"
+        "ql_c_cl_wait" => "integer"
+        "ql_cl_messages" => "integer"
+        "ql_c_rnd_rows" => "integer"
+        "ql_rnd_rows" => "integer"
+        "ql_seq_rows" => "integer"
+        "ql_same_seg" => "integer"
+        "ql_same_page" => "integer"
+        "ql_same_parent" => "integer"
+        "ql_thread_clocks" => "integer"
+        "ql_disk_wait_clocks" => "integer"
+        "ql_cl_wait_clocks" => "integer"
+        "ql_pg_wait_clocks" => "integer"
+        "ql_disk_reads" => "integer"
+        "ql_spec_disk_reads" => "integer"
+        "ql_message_bytes" => "integer"
+        "ql_qp_threads" => "integer"
+        "ql_memory" => "integer"
+        "ql_memory_max" => "integer"
+        "ql_lock_waits" => "integer"
+        "ql_lock_wait_msec" => "integer"
+        "ql_node_stat" => "integer"
+        "ql_c_memory" => "integer"
+        "ql_rows_affected" => "integer"
+	}
+    }
+    date {
+	match => [ "ql_start_dt" , "ISO8601" , "yyyy-MM-dd HH:mm:ss" ]
+	target => "@timestamp"
+#	locale => "en"
+#	timezone => "UTC"
+    }
+
+    grok {
+        patterns_dir => ["/etc/logstash/patterns"]
+        match => ["ql_text", "(?:debug_info(?<debug_tmp>.*?)PREFIX)"]
+    }
+
+    json {
+        "source" => "debug_tmp"
+        "target" => "debug_info"
+        remove_field => ["debug_tmp"]
+    }
+
+    mutate {
+	    remove_field => ["message", "debug_tmp"]
+    }
+  }
+    # UptimeRobot
+    if "site" in [indexname] {
+#	date {
+#	    match => ["monitors.create_date_time", "UNIX_MS"]
+#	    target => "my_date"
+#	}
+	split {
+	    field => "monitors"
+	}
+    }
+}
+
+# Вывод Логсташ
+output {
+
+  elasticsearch {
+    hosts => ["host"]
+    user => logstash
+    password =>  password
+    ssl => true
+    cacert => "certpath"
+    index => "%{indexname}beat-%{+YYYY.MM.dd}"
+  }
+#  stdout {
+#    }
+}
