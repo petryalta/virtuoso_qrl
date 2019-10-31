@@ -1,5 +1,5 @@
-# virtuoso_qrl
-Tools for Openlink Virtuoso QRL log analize
+# Virtuoso QRL to CSV
+Tool for Openlink converting Virtuoso QRL log to CSV.
 For more information run: php qrl.php --help
 
 # Prepare QRL log
@@ -17,6 +17,7 @@ check your file in ./csv/1.csv
 
 # Replay QRL log
 
+You can also replay qrl log on the development db.
 Export the queries to dat file (doesn't work without exporting to csv):
 
 ```
@@ -34,3 +35,8 @@ docker exec qrl_php php qrl.php --play --odbc --qf=./dat/1.dat --time --mc=500
 
 Requirements: PHP 7.2, odbc driver
 You can run this scripts directly from host machine (you need only configure db.conf)
+
+# Contact
+
+I can help you configure your logstash/kibana QRL analyzing dashboards.
+For more information: t.me/awesomeshedy
