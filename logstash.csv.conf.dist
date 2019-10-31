@@ -4,6 +4,7 @@ input {
 	path => "/var/lib/logstash/csv/*.csv"
 	start_position => "beginning"
 	sincedb_path => "/dev/null"
+	mode => "read"
 	file_completed_action => "delete"
         codec => plain {
             charset => "UTF-8"

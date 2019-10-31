@@ -146,7 +146,7 @@ if (!isset($directly) && isset($csv) && isset($data) && count($data) > 0) {
 // directly write imported data
 if (isset($directly) && isset($qrl_log) && isset($csv)) {
 
-    $countPeer = 10;
+    $countPeer = 100;
     $qf = $qf ?? 'querys.dat';
 
     $f_querys = fopen($qf, 'w');
